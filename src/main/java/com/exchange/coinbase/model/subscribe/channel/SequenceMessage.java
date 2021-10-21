@@ -12,11 +12,4 @@ public abstract class SequenceMessage extends Message {
   public void setSequence(long sequence) {
     this.sequence = sequence;
   }
-
-  @Override
-  public String toString() {
-    return "SequenceMessage{" +
-        "sequence=" + sequence +
-        '}';
-  }
 }

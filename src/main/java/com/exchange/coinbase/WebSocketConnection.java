@@ -1,12 +1,16 @@
 package com.exchange.coinbase;
 
+import com.exchange.coinbase.model.security.HmacSHA256Signer;
 import com.exchange.coinbase.model.subscribe.Message;
+import com.exchange.coinbase.model.subscribe.SignedSubscribeRequest;
 import com.exchange.coinbase.model.subscribe.SubscribeRequest;
 import com.exchange.coinbase.model.subscribe.channel.ChannelRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -34,6 +38,9 @@ public class WebSocketConnection {
   private Flux<Message> flux;
   private ObjectMapper mapper;
   private List<ChannelRequest> requests = new ArrayList<>();
+  private String apiKey;
+  private String secret;
+  private String passphrase;
 
   public WebSocketConnection(OkHttpClient client,
       ObjectMapper mapper,
@@ -44,6 +51,9 @@ public class WebSocketConnection {
     this.request = request;
     this.mapper = mapper;
     this.client = client;
+    this.apiKey = apiKey;
+    this.secret = secret;
+    this.passphrase = passphrase;
     init(request);
   }
 
@@ -88,6 +98,11 @@ public class WebSocketConnection {
     return flux;
   }
 
+  public boolean addRequests(ChannelRequest... channelRequests)
+      throws JsonProcessingException {
+    return addRequests(Arrays.asList(channelRequests));
+  }
+
   public boolean addRequests(List<ChannelRequest> channelRequests)
       throws JsonProcessingException {
     this.requests.addAll(channelRequests);
@@ -96,8 +111,22 @@ public class WebSocketConnection {
 
   private boolean sendChannelRequest(List<ChannelRequest> channelRequests)
       throws JsonProcessingException {
-    SubscribeRequest subscribeRequest = new SubscribeRequest(channelRequests);
+    SubscribeRequest request = new SubscribeRequest(channelRequests);
+    if (this.apiKey != null && this.secret != null && this.passphrase != null) {
+      SignedSubscribeRequest signedSubscribeRequest = new SignedSubscribeRequest(channelRequests, apiKey, passphrase);
+      String timestamp = String.valueOf(Instant.now().toEpochMilli() / 1000);
+      signedSubscribeRequest.setTimestamp(timestamp);
+      signedSubscribeRequest.setKey(apiKey);
+      signedSubscribeRequest.setPassphrase(passphrase);
+      String path = "/users/self/verify";
+      String message =
+          timestamp + HttpMethod.GET.name() + path;
+      String signedMessage = HmacSHA256Signer.sign(message, secret);
+      signedSubscribeRequest.setSignature(signedMessage);
+      request = signedSubscribeRequest;
+    }
 
-    return this.webSocket.send(mapper.writeValueAsString(subscribeRequest));
+    String sendMessage = mapper.writeValueAsString(request);
+    return this.webSocket.send(sendMessage);
   }
 }

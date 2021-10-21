@@ -11,7 +11,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @Type(value = Level2Request.class, name = "level2"),
     @Type(value = HeartbeatRequest.class, name = "heartbeat"),
     @Type(value = StatusRequest.class, name = "status"),
-    @Type(value = TickerRequest.class, name = "ticker")
+    @Type(value = TickerRequest.class, name = "ticker"),
+    @Type(value = FullRequest.class, name = "full")
 })
 public abstract class ChannelRequest {
 }

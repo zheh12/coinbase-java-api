@@ -11,6 +11,7 @@ import com.exchange.coinbase.model.order.OrderStatus;
 import com.exchange.coinbase.model.order.OrderType;
 import com.exchange.coinbase.model.order.TimeInForce;
 import com.exchange.coinbase.model.profiles.Profile;
+import com.exchange.coinbase.model.subscribe.channel.FullRequest;
 import com.exchange.coinbase.model.subscribe.channel.HeartbeatRequest;
 import com.exchange.coinbase.model.subscribe.channel.Level2Request;
 import com.exchange.coinbase.model.subscribe.channel.StatusRequest;
@@ -32,13 +33,15 @@ public class CoinbaseClientTest {
   public static final String passphrase = "am1hz5cotnl";
   public static final String secret = "HfHzkjqTYU7qVlfT4VbMjxIycPahIL7iKpOo0J0iJzSbA1cPobOkkw2WQ4KK0/hSFUaiTiQBmzfeW/XzGwCVww==";
 
-  public static  String baseUrl = "https://api-public.sandbox.exchange.coinbase.com";
+  public static String baseUrl = "https://api-public.sandbox.exchange.coinbase.com";
+  public static String wsBaseUrl = "wss://ws-feed-public.sandbox.exchange.coinbase.com";
 
   public static Logger logger = LoggerFactory.getLogger(CoinbaseClientTest.class);
 
   public static void main(String[] args) throws JsonProcessingException, InterruptedException {
     CoinbaseClient client = new CoinbaseClient()
         .baseUrl(baseUrl)
+        .wsBaseUrl(wsBaseUrl)
         .apiKey(apiKey)
         .secret(secret)
         .passphrase(passphrase);
@@ -101,17 +104,19 @@ public class CoinbaseClientTest {
         .subscribe(x -> logger.info("receive from web socket message: {}", x),
             Throwable::printStackTrace);
 
-    connection.addRequests(Arrays.asList(
+    connection.addRequests(new FullRequest("BTC-USD"));
+
+    connection.addRequests(
         new HeartbeatRequest("BTC-USD"),
-        new StatusRequest()));
+        new StatusRequest());
 
     // wait some time, add other heartbeat request
     Thread.sleep(1000 * 10);
     logger.info("add new channel for web socket");
-    connection.addRequests(Arrays.asList(
+    connection.addRequests(
         new HeartbeatRequest("ETH-USD"),
         new Level2Request("ETH-USD", "BTC-USD"),
         new TickerRequest("ETH-USD", "BTC-USD")
-    ));
+    );
   }
 }

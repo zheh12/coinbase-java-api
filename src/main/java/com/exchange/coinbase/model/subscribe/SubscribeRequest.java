@@ -1,6 +1,7 @@
 package com.exchange.coinbase.model.subscribe;
 
 import com.exchange.coinbase.model.subscribe.channel.ChannelRequest;
+import java.time.Instant;
 import java.util.List;
 
 public class SubscribeRequest {
